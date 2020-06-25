@@ -1,0 +1,18 @@
+.button{
+     -fx-font-size: 14;
+     -fx-font-family: "Serif";
+     -fx-background-color: #385a63;
+     -fx-text-fill: #d8ffff;
+}
+
+.text-area{
+    -fx-background-color: #292c35;
+    -fx-text-fill: #e6f8fa;
+    -fx-highlight-text-fill: #e6f8fa;
+    -fx-control-inner-background: #1C2A39;
+    -fx-highlight-fill: #6d959d;
+}
+.text-field{
+    -fx-control-inner-background: #E6E6FA;
+
+}
