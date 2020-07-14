@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Vector;
 
 public class Server {
-    List<ClientHandler> clients;
+    private List<ClientHandler> clients;
     private AuthService authService;
 
     public AuthService getAuthService() {
@@ -32,7 +32,7 @@ public class Server {
                 System.out.println("Клиент подключился");
                 System.out.println("socket.getRemoteSocketAddress(): " + socket.getRemoteSocketAddress());
                 System.out.println("socket.getLocalSocketAddress() " + socket.getLocalSocketAddress());
-                subscribe(new ClientHandler(this, socket));
+                new ClientHandler(this, socket);
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -45,28 +45,62 @@ public class Server {
         }
     }
 
-    public void lsMsg(ClientHandler from, String nick, String msg) { // Класс для отправки личных сообщений
-        for (ClientHandler clientHandler : clients) {
-            if (clientHandler.getName().equals(nick)) {
-                clientHandler.sendMsg("от " + from.getName());
-                from.sendMsg("клиенту " + nick + ": " + msg);
+    void broadcastMsg(ClientHandler sender, String msg) {
+        String message = String.format("%s : %s", sender.getNick(), msg);
+
+        for (ClientHandler client : clients) {
+            client.sendMsg(message);
+        }
+    }
+
+    void privateMsg(ClientHandler sender, String receiver, String msg) {
+        String message = String.format("[%s] private [%s] : %s", sender.getNick(), receiver, msg);
+
+        for (ClientHandler c : clients) {
+            if (c.getNick().equals(sender.getNick())) { // чтобы не отправлялось сообщение дважды самому себе
+                c.sendMsg(message);
+                return;
+            }
+            if (c.getNick().equals(receiver)) {
+                c.sendMsg(message);
+                sender.sendMsg(message);
                 return;
             }
         }
-        from.sendMsg("Участника с ником " + nick + " нет в чат-комнате");
+        sender.sendMsg(String.format("Client %s not found", receiver));
     }
 
-    void broadcastMsg(String msg) {
-        for (ClientHandler client : clients) {
-            client.sendMsg(msg);
-        }
-    }
 
     public void subscribe(ClientHandler clientHandler) {
         clients.add(clientHandler);
+        broadcastClientList();
     }
 
     public void unsubscribe(ClientHandler clientHandler) {
         clients.remove(clientHandler);
+        broadcastClientList();
+    }
+
+    public boolean isLoginAuthorized(String login) {
+        for (ClientHandler c : clients) {
+            if (c.getLogin().equals(login)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    void broadcastClientList() {
+        StringBuilder sb = new StringBuilder("/clientlist ");
+
+        for (ClientHandler c : clients) {
+            sb.append(c.getNick()).append(" ");
+        }
+
+        String msg = sb.toString();
+
+        for (ClientHandler c : clients) {
+            c.sendMsg(msg);
+        }
     }
 }
